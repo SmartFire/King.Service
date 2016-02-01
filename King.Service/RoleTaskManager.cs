@@ -19,7 +19,12 @@
         /// Tasks
         /// </summary>
         protected IReadOnlyCollection<IRunnable> tasks = null;
-        
+
+        /// <summary>
+        /// Initialization Tasks
+        /// </summary>
+        protected IReadOnlyCollection<IRunnable> initTasks = null;
+
         /// <summary>
         /// Factories
         /// </summary>
@@ -73,6 +78,17 @@
                 return this.tasks;
             }
         }
+
+        /// <summary>
+        /// Initialization Tasks
+        /// </summary>
+        public virtual IReadOnlyCollection<IRunnable> InitializationTasks
+        {
+            get
+            {
+                return this.initTasks;
+            }
+        }
         #endregion
 
         #region Methods
@@ -89,26 +105,12 @@
 
                 Trace.TraceInformation("Starting {0} tasks", taskCount);
 
-                ushort successCount = 0;
+                var successCount = 0;
 
-                foreach (var task in tasks)
-                {
-                    try
-                    {
-                        task.Start();
-                        
-                        successCount++;
-
-                        Trace.TraceInformation("{0} started.", task.GetType().ToString());
-                    }
-                    catch (Exception ex)
-                    {
-                        Trace.TraceError("Failed to start {0}: {1}", task.GetType().ToString(), ex.ToString());
-                    }
-
-                    Thread.Sleep(BaseTimes.ThreadingOffset);
-                }
-
+                successCount += this.Run(this.initTasks);
+                //Delete Init Tasks? How to ensure they are 'done'
+                successCount += this.Run(this.tasks, BaseTimes.ThreadingOffset);
+                
                 Trace.TraceInformation("Finished starting tasks {0}/{1} successfully.", successCount, taskCount);
             }
             else
@@ -117,6 +119,30 @@
             }
 
             Trace.TraceInformation("Run finished");
+        }
+
+        public int Run(IEnumerable<IRunnable> tasks, byte offset = 0)
+        {
+            var successCount = 0;
+            foreach (var task in tasks)
+            {
+                try
+                {
+                    task.Start();
+
+                    successCount++;
+
+                    Trace.TraceInformation("{0} started.", task.GetType().ToString());
+                }
+                catch (Exception ex)
+                {
+                    Trace.TraceError("Failed to start {0}: {1}", task.GetType().ToString(), ex.ToString());
+                }
+
+                Thread.Sleep(BaseTimes.ThreadingOffset);
+            }
+
+            return successCount;
         }
 
         /// <summary>
@@ -136,7 +162,16 @@
                 {
                     Trace.TraceInformation("Tasks loading");
 
-                    this.tasks = new ReadOnlyCollection<IRunnable>(ts.ToList());
+                    var x = from i in ts
+                            where i.GetType() == typeof(InitializeTask)
+                            select i;
+
+                    var y = from i in ts
+                            where i.GetType() != typeof(InitializeTask)
+                            select i;
+
+                    this.initTasks = new ReadOnlyCollection<IRunnable>(x.ToList());
+                    this.tasks = new ReadOnlyCollection<IRunnable>(y.ToList());
 
                     Trace.TraceInformation("Tasks loaded");
                 }
@@ -226,6 +261,22 @@
                     });
 
                     this.tasks = null;
+                }
+                if (null != this.initTasks)
+                {
+                    Parallel.ForEach(initTasks, task =>
+                    {
+                        try
+                        {
+                            task.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace.TraceError("Error while disposing of initialization task ({0}): {1}", task.GetType(), ex.ToString());
+                        }
+                    });
+
+                    this.initTasks = null;
                 }
             }
         }

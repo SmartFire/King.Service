@@ -120,6 +120,14 @@
         {
             get;
         }
+
+        /// <summary>
+        /// Initialization Tasks
+        /// </summary>
+        IReadOnlyCollection<IRunnable> InitializationTasks
+        {
+            get;
+        }
         #endregion
 
         #region Methods
