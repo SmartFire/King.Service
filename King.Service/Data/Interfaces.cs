@@ -154,7 +154,7 @@
         /// <param name="setup">Setup</param>
         /// <returns>Storage Queue Auto Scaler</returns>
         IRunnable Dequeue<T>(IQueueSetup<T> setup);
-
+        
         /// <summary>
         /// Dequeue Task Set
         /// </summary>
@@ -162,8 +162,9 @@
         /// <typeparam name="T">Model</typeparam>
         /// <param name="name">Name</param>
         /// <param name="priority">Priority</param>
-        /// <returns></returns>
-        IEnumerable<IRunnable> Dequeue<T, Y>(string name, QueuePriority priority = QueuePriority.Low)
+        /// <param name="shardCount">Shard Count</param>
+        /// <returns>Tasks</returns>
+        IEnumerable<IRunnable> Dequeue<T, Y>(string name, QueuePriority priority = QueuePriority.Low, int shardCount = 0)
             where T : IProcessor<Y>, new();
         #endregion
     }

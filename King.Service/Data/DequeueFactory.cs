@@ -152,7 +152,8 @@
         /// <typeparam name="T">Model</typeparam>
         /// <param name="name">Name</param>
         /// <param name="priority">Priority</param>
-        /// <returns></returns>
+        /// <param name="shardCount">Shard Count</param>
+        /// <returns>Tasks</returns>
         public virtual IEnumerable<IRunnable> Dequeue<T, Y>(string name, QueuePriority priority = QueuePriority.Low, int shardCount = 0)
             where T : IProcessor<Y>, new()
         {
