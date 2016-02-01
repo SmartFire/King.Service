@@ -119,7 +119,7 @@
 
             scale.Maximum = (byte)random.Next(byte.MinValue, byte.MaxValue);
             scale.Minimum = (byte)random.Next(byte.MinValue, scale.Maximum);
-            
+
             var throughput = Substitute.For<IQueueThroughput>();
             throughput.Scale(setup.Priority).Returns(scale);
             throughput.CheckScaleEvery(setup.Priority).Returns((byte)random.Next(1, 300));
@@ -136,7 +136,7 @@
             throughput.Received().Scale(setup.Priority);
             throughput.Received().CheckScaleEvery(setup.Priority);
         }
-    
+
         [Test]
         public void DequeueTaskSetupNull()
         {
@@ -190,6 +190,24 @@
 
             Assert.IsNotNull(tasks);
             Assert.AreEqual(2, tasks.Count());
+
+            var t = (from n in tasks
+                     where n.GetType() == typeof(InitializeStorageTask)
+                     select true).FirstOrDefault();
+
+            Assert.IsTrue(t);
+        }
+
+        [Test]
+        public void DequeueCreationMultiple()
+        {
+            var random = new Random();
+            var cnt = random.Next(1, 50);
+            var f = new DequeueFactory(ConnectionString);
+            var tasks = f.Dequeue<HelpP, object>("testing", QueuePriority.High, cnt);
+
+            Assert.IsNotNull(tasks);
+            Assert.AreEqual(cnt * 2, tasks.Count());
 
             var t = (from n in tasks
                      where n.GetType() == typeof(InitializeStorageTask)
