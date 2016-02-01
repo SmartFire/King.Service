@@ -153,7 +153,7 @@
         /// <param name="name">Name</param>
         /// <param name="priority">Priority</param>
         /// <returns></returns>
-        public virtual IEnumerable<IRunnable> Dequeue<T, Y>(string name, QueuePriority priority = QueuePriority.Low)
+        public virtual IEnumerable<IRunnable> Dequeue<T, Y>(string name, QueuePriority priority = QueuePriority.Low, int shardCount = 0)
             where T : IProcessor<Y>, new()
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -161,13 +161,33 @@
                 throw new ArgumentException("name");
             }
 
-            var setup = new QueueSetupProcessor<T, Y>()
-            {
-                Priority = QueuePriority.Medium,
-                Name = name,
-            };
+            var queues = new List<IRunnable>();
 
-            return this.Tasks<Y>(setup);
+            if (shardCount <= 0)
+            {
+                var setup = new QueueSetupProcessor<T, Y>()
+                {
+                    Priority = priority,
+                    Name = name,
+                };
+
+                queues.AddRange(this.Tasks<Y>(setup));
+            }
+            else
+            {
+                for (var i = 0; i < shardCount; i++)
+                {
+                    var setup = new QueueSetupProcessor<T, Y>()
+                    {
+                        Priority = priority,
+                        Name = string.Format("{0}{1}", name, i),
+                    };
+
+                    queues.AddRange(this.Tasks<Y>(setup));
+                }
+            }
+
+            return queues;
         }
         #endregion
     }
