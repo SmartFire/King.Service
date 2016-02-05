@@ -50,6 +50,7 @@
                 new CompanyQueuer(config.FastQueueName, config.ConnectionString),
                 new CompanyQueuer(config.ModerateQueueName, config.ConnectionString),
                 new CompanyQueuer(config.SlowQueueName, config.ConnectionString),
+                new CompanyShardQueuer(config.ShardedQueueName, config.ConnectionString),
             });
 
             ///Dequeue Tasks Example

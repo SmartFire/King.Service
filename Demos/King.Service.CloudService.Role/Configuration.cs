@@ -33,6 +33,11 @@
             get;
             set;
         }
+        public string ShardedQueueName
+        {
+            get;
+            set;
+        }
         public string ContainerName
         {
             get;
